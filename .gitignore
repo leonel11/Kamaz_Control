@@ -1,0 +1,6 @@
+# Files
+*.csv
+
+#Folders
+*/caffe
+*/data
