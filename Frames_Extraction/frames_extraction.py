@@ -1,8 +1,6 @@
 import cv2
 import os
-import shutil
 import re
-from pathlib import Path
 from argparse import ArgumentParser
 
 
@@ -15,20 +13,39 @@ def get_video_paths(data_path):
     return video_paths
 
 
-def extract_frames(video_path, missed_frames, freq_frames):
+def get_class_number(file_name):
+    if file_name.find('ekranturb') >= 0:
+        return '0'
+    if file_name.find('kkomp') >= 0:
+        return '1'
+    if file_name.find('kol') >= 0:
+        return '2'
+    if file_name.find('krysh') >= 0:
+        return '3'
+    if file_name.find('perehodnik') >= 0:
+        return '4'
+    if file_name.find('pod') >= 0:
+        return '5'
+    if file_name.find('turbokompressor') >= 0:
+        return '7'
+    if file_name.find('turb') >= 0:
+        return '6'
+    if file_name.find('usel') >= 0:
+        return '8'
+    if file_name.find('val') >= 0:
+        return '9'
+    return ''
+
+
+def extract_frames(video_path, missed_frames, freq_frames, save_path):
     video_name = os.path.splitext(os.path.basename(video_path))[0]
-    # dir_frames = os.path.join(os.path.dirname(video_path), video_name)
-    # FIXME: bad bypassing the problem of Russian lettres in the path for saving
-    # creating empty folder for frames
-    dir_class = os.path.join(os.path.dirname(Path(video_path).parent), re.sub('[^a-zA-Z]', '', video_name))
-    # path to folder, conforming the name of video
-    dir_frames = os.path.join(dir_class, video_name)
+    class_number = get_class_number(str.lower(video_name))
+    video_number = '{:0>2}'.format(int(re.sub('[^0-9]', '', video_name[video_name.rfind('.'):])))
+    if len(video_number) > 2:
+        video_number = video_number[1:]
     try:
-        if not os.path.exists(dir_class):
-            os.makedirs(dir_class)
-        if os.path.exists(dir_frames):
-            shutil.rmtree(dir_frames)
-        os.makedirs(dir_frames)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
     except OSError:
         print('Error: Creating directory of data')
         return
@@ -40,9 +57,10 @@ def extract_frames(video_path, missed_frames, freq_frames):
             break
         if (cur_frame > missed_frames) and ((cur_frame-missed_frames) % freq_frames == 0):
             # save current frame in jpg file
-            name = os.path.join(dir_frames, '{:0>4}.jpg'.format(cur_frame - missed_frames))
-            print('Creating \t ' + name)
-            cv2.imwrite(name, frame)
+            jpg_file = '{}_{}_{:0>4}.jpg'.format(class_number, video_number, cur_frame - missed_frames)
+            file_name = os.path.join(save_path,  jpg_file)
+            print('Creating \t ' + file_name)
+            cv2.imwrite(file_name, frame)
         cur_frame += 1
     cap.release() # close video
     cv2.destroyAllWindows()
@@ -50,7 +68,7 @@ def extract_frames(video_path, missed_frames, freq_frames):
 
 def init_argparse():
     # Initialize params of argparse
-    parser = ArgumentParser(description='Trains toxic comment classifier')
+    parser = ArgumentParser(description='Frames Extraction script')
     parser.add_argument(
         '-data',
         '--data_path',
@@ -72,6 +90,13 @@ def init_argparse():
         help='count of frames, which will be missed in the beggining of every video',
         default=0,
         type=int)
+    parser.add_argument(
+        '-savepath',
+        '--save_path',
+        nargs='?',
+        help='path to folder, for saving frames',
+        default='/frames',
+        type=str)
     return parser
 
 
@@ -80,9 +105,10 @@ def main():
     data_path = args.data_path
     freq_frames = args.freq_frames
     missed_frames = args.missed_frames
+    save_path = args.save_path
     video_paths = get_video_paths(data_path)
     for path_to_avi in video_paths:
-        extract_frames(path_to_avi, missed_frames, freq_frames)
+        extract_frames(path_to_avi, missed_frames, freq_frames, save_path)
 
 
 if __name__ == '__main__':
