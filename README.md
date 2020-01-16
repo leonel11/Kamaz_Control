@@ -24,6 +24,10 @@ Kamaz Control Challenge
 	https://github.com/martin-danelljan/ECO
 	``` 
 	and follow the instructions about its installations. Also see Advices below for solving some problems in the process of installation ECO repository
+5. Clone R-FCN repository
+	```
+	https://github.com/daijifeng001/R-FCN
+	```
 
 ## Advices
 
